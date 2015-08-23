@@ -1,0 +1,11 @@
+# Base apps
+MySQL-python
+Django>1.8
+django-grappelli
+django_compressor
+Pillow
+
+# Additional apps
+easy_thumbnails
+python-slugify
+django-autoslug
