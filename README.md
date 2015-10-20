@@ -1,0 +1,1 @@
+```django-admin.py startproject --template=https://github.com/aderugin/django-project-template/zipball/master <project_name>```

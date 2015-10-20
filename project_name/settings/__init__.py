@@ -9,7 +9,9 @@ import os
 # Django
 #==============================================================================
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+PROJECT_DIR = os.path.dirname(BASE_DIR)
 
 SECRET_KEY = '{{ secret_key }}'
 
@@ -27,12 +29,14 @@ ADMINS = (
 # Application definition
 
 INSTALLED_APPS = (
+    'grappelli',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.sites',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -61,6 +65,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django.core.context_processors.request',
             ],
         },
     },
@@ -92,9 +97,9 @@ STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'static'),
 )
 
-MEDIA_ROOT = os.path.join(BASE_DIR, 'public', 'media')
+MEDIA_ROOT = os.path.join(PROJECT_DIR, 'public', 'media')
 
-STATIC_ROOT = os.path.join(BASE_DIR, 'public' 'static')
+STATIC_ROOT = os.path.join(PROJECT_DIR, 'public', 'static')
 
 STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
@@ -140,7 +145,7 @@ HAYSTACK_XAPIAN_LANGUAGE = 'russian'
 HAYSTACK_CONNECTIONS = {
     'default': {
         'ENGINE': 'xapian_backend.XapianEngine',
-        'PATH': os.path.join(BASE_DIR, 'xapian_index'),
+        'PATH': os.path.join(PROJECT_DIR, 'xapian_index'),
     },
 }
 
@@ -156,7 +161,7 @@ LOGGING = {
         'file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': os.path.join(BASE_DIR, 'debug.log'),
+            'filename': os.path.join(PROJECT_DIR, 'debug.log'),
         },
     },
     'loggers': {
