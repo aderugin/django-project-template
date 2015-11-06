@@ -1,5 +1,6 @@
 # Base apps
-MySQL-python
+mysqlclient
+# MySQL-python
 Django>1.8
 django-grappelli
 django_compressor
