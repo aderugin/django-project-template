@@ -18,35 +18,29 @@ from fabric.contrib.files import append
 from fabric.contrib.files import exists
 
 
-# TODO: Дамп media
-
-# TODO: Обновление базы данных и media на локальном компьютере
-
-# TODO: Перенести все медиа на s3 на локальном компьютере
-
-
-REQUIREMENTS_NAME = 'requierements.txt'
-# Папка для дампа db на сервере
-DB_BACKUPS_ROOT = 'db_backups/'  # <path>/
+BACKUPS_ROOT = 'backups/'
 
 MARKUP_DIRECTORY = ''
 
-LOCAL_SSH_KEY_PATH = os.path.expanduser('~/.ssh/id_rsa.pub')
+LOCAL_SSH_KEY = None
+
+with open(os.path.expanduser('~/.ssh/id_rsa.pub'), 'r') as f:
+    LOCAL_SSH_KEY = f.read()
 
 ENVIRONMENT = {
     'staging': '',
     'production': {
         # Пользователь на сервере
-        'user': 'autosignal',
+        'user': 'user',
         # Хосты на которых расположен проект.
-        'host': [''],  # django@127.0.0.1
+        'host': ['127.0.0.1'],  # django@127.0.0.1
         # Ветка
         'branch': 'master',
         # Путь до папки с media
         'media_root': '',
         # Папка с проектом на сервере
         'root_dir': '',
-        # Путь до virtualenv директории на серверах
+        # Команда активации окружения
         'venv': 'source <path>/bin/activate',
         # Пользователь базы данных
         'db_user': 'root',
@@ -55,12 +49,11 @@ ENVIRONMENT = {
         # Имя базы данных
         'db_name': '',
         # Название процесс supervisor
-        'supervisor_name': '<>:site'
+        'supervisor': None,
+        # Файл с зависимостями
+        'requirements': 'requirements/production.txt'
     },
 }
-
-
-env.key_filename = LOCAL_SSH_KEY_PATH
 
 
 def active_env(name):
@@ -80,7 +73,8 @@ def active_env(name):
     env.db_user = local_env['db_user']
     env.db_password = local_env['db_password']
     env.db_name = local_env['db_name']
-    env.supervisor_name = local_env['supervisor_name']
+    env.supervisor = local_env['supervisor']
+    env.requirements = local_env['requirements']
 
 
 @task
@@ -100,40 +94,25 @@ def production():
 
 
 @task
-def push_ssh_key():
-    """
-    Загрузка ssh ключа
-    """
-    with open(LOCAL_SSH_KEY_PATH, 'r') as keyf:
-        key = keyf.read()
-        with cd('~/.ssh/'):
-            append('authorized_keys', key)
-
-
-@task
 def deploy():
     # Пушим все локальные изменения
-    local('git push origin master')
+    local('git push origin %s' % env.branch)
+
     # Если верстка отдельный репозиторий
     if MARKUP_DIRECTORY:
         with lcd(MARKUP_DIRECTORY):
-            local('git push origin master')
+            local('git push origin %s' % env.branch)
 
     # Заливаем изменения на сервер
     with cd(env.root):
-        run('git pull origin master')
+        run('git pull origin %s' % env.branch)
         # Заливаем верстку
         if MARKUP_DIRECTORY:
             with cd(MARKUP_DIRECTORY):
-                run('git pull origin master')
+                run('git pull origin %s' % env.branch)
 
-    # Если папки для дмапов нет, то создаем ее
-    if not exists('~/%s' % DB_BACKUPS_ROOT):
-        run('mkdir ~/%s' % DB_BACKUPS_ROOT)
-    # Дамп базы данных
-    run('mysqldump -u %s -p%s %s > ~/%s%s' %
-        (env.db_user, env.db_password, env.db_name, DB_BACKUPS_ROOT,
-            '{0}_{1}.sql'.format(env.db_name, datetime.strftime(datetime.now(), '%d.%m.%y_%M:%S'))))
+    # Дамп базы данных перед миграциями
+    backup_database()
 
     # Выполняем команды django
     with cd(env.root):
@@ -141,37 +120,48 @@ def deploy():
             run('python manage.py collectstatic --noinput')
             run('python manage.py migrate')
 
-    # Перезагружаем web сервер
-    sudo('supervisorctl restart ' + env.supervisor_name)
-    # TODO: логирование
+    # Перезагружаем процессы
+    run('supervisorctl restart ' + env.supervisor)
 
 
 @task
 def install():
     """
     Установка зависимостей
-
-    Аргументы:
-        - :branch: Ветка из которой берутся изменения, по умолчанию текущий для окружения
+        Ставит завизимости соответсвующи окружению
     """
     with cd(env.root):
-        # Обновляем зависимости для проекта
         with prefix(env.activate):
-            run('pip install -r ' + REQUIREMENTS_NAME)
+            run('pip install -r ' + env.requirements)
+
+
+def backup_database():
+    """
+    Бэкап базы данных
+        return: путь до сделанного бэкапа
+    """
+    path = '~/%s/db' % BACKUPS_ROOT
+    name = '{0}_{1}.sql'.format(env.db_name, datetime.strftime(datetime.now(), '%d.%m.%y_%M:%S'))
+    run('mkdir -p %s' % path)
+    run('mysqldump -u %s -p%s %s > ~/%s%s' % (env.db_user, env.db_password, env.db_name, path, name))
+    return '%s/%s' (path, name)
 
 
 @task
-def dump_db():
+def push_ssh_key():
+    """
+    Загрузка ssh ключа
+    """
+    with cd('~/.ssh/'):
+        append('authorized_keys', LOCAL_SSH_KEY)
+
+
+@task
+def dump_database():
     """
     Создание дампа базы данных и его загрузка
     """
-    dump_name = '{0}_{1}'.format(env.db_name, datetime.strftime(datetime.now(), '%d.%m.%y_%M:%S'))
-
-    run('mysqldump -u %s -p%s %s > ~/%s%s' %
-        (env.db_user, env.db_password, env.db_name, DB_BACKUPS_ROOT,
-            '{0}_{1}.sql'.format(env.db_name, dump_name)))
-
-    get('~/%s%s' % (DB_BACKUPS_ROOT, dump_name), 'db/')
+    get(backup_database(), 'db/')
 
 
 @task
