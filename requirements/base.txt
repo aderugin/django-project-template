@@ -1,12 +1,11 @@
 # Base apps
 mysqlclient
-# MySQL-python
-Django>1.8
+Django
 django-grappelli
-django_compressor
+django-compressor
 Pillow
 
 # Additional apps
-easy_thumbnails
+easy-thumbnails
 python-slugify
 django-autoslug

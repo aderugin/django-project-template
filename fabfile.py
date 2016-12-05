@@ -2,20 +2,8 @@
 from datetime import datetime
 import os
 
-from fabric.api import task
-from fabric.api import run
-from fabric.api import local
-from fabric.api import env
-from fabric.api import cd
-from fabric.api import get
-from fabric.api import lcd
-from fabric.api import prefix
-from fabric.api import sudo
-from fabric.api import hide
-from fabric.api import shell_env
-
+from fabric.api import task, run, local, env, cd, get, prefix
 from fabric.contrib.files import append
-from fabric.contrib.files import exists
 
 
 BACKUPS_ROOT = 'backups/'
@@ -94,22 +82,17 @@ def production():
 
 
 @task
-def deploy():
-    # Пушим все локальные изменения
-    local('git push origin %s' % env.branch)
+def deploy(branch=None):
+    branch = branch or env.branch
 
-    # Если верстка отдельный репозиторий
-    if MARKUP_DIRECTORY:
-        with lcd(MARKUP_DIRECTORY):
-            local('git push origin %s' % env.branch)
+    # Пушим все локальные изменения
+    local('git push origin %s' % branch)
 
     # Заливаем изменения на сервер
     with cd(env.root):
-        run('git pull origin %s' % env.branch)
-        # Заливаем верстку
-        if MARKUP_DIRECTORY:
-            with cd(MARKUP_DIRECTORY):
-                run('git pull origin %s' % env.branch)
+        if branch != env.branch:
+            run('git fetch origin %s' % branch)
+        run('git pull origin %s' % branch)
 
     # Дамп базы данных перед миграциями
     backup_database()
@@ -132,7 +115,7 @@ def install():
     """
     with cd(env.root):
         with prefix(env.activate):
-            run('pip install -r ' + env.requirements)
+            run('pip install -r %s' % env.requirements)
 
 
 def backup_database():
@@ -170,3 +153,65 @@ def dump_media():
     Создание дампа media и его загрузка
     """
     pass
+
+
+# ==============================================================================
+# Docker
+# ==============================================================================
+
+@task
+def build():
+    local('docker-compose build')
+
+
+@task
+def start(port='8000'):
+    with prefix('export APP_PORT=%s' % port):
+        local('docker-compose up -d')
+
+
+@task
+def stop():
+    local('docker-compose down')
+
+
+@task
+def status():
+    local('docker-compose ps')
+
+
+@task
+def migrate(app='', fake=False):
+    local('docker-compose exec webapp python manage.py migrate %s %s' % (
+        app, '--fake-initial' if fake else ''
+    ))
+
+
+@task
+def makemigrations(app=''):
+    local('docker-compose exec webapp python manage.py makemigrations %s' % app)
+
+
+@task
+def runserver():
+    local('docker-compose exec webapp python manage.py runserver 0.0.0.0:8000')
+
+
+@task
+def shell():
+    local('docker-compose exec webapp python manage.py shell')
+
+
+@task
+def manage(command):
+    local('docker-compose exec webapp python manage.py %s' % command)
+
+
+@task
+def sqlshell():
+    local('docker-compose exec webapp python manage.py shell_plus --print-sql')
+
+
+@task
+def run_tests(app=''):
+    local('docker-compose exec webapp python manage.py test %s --keepdb' % app)

@@ -2,7 +2,7 @@
 """
     Настройки среды для разработки
 """
-from . import *
+from . import *  # NOQA
 
 
 SITE_ID = 1
@@ -19,12 +19,22 @@ DATABASES = {
         'NAME': '{{ project_name }}',
         'USER': 'root',
         'PASSWORD': '',
-        'HOST': 'localhost',
+        'HOST': 'mysql.local',
         'PORT': '3306',
         'TEST_CHARSET': 'utf8',
     }
 }
 
-INSTALLED_APPS += (
+INSTALLED_APPS += (  # NOQA
     'debug_toolbar',
 )
+
+
+def show_toolbar(request):
+    if request.is_ajax():
+        return False
+    return True
+
+DEBUG_TOOLBAR_CONFIG = {
+    'SHOW_TOOLBAR_CALLBACK': '{{ project_name }}.settings.develop.show_toolbar',
+}

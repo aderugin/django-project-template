@@ -188,6 +188,10 @@ LOGGING = {
 
 THUMBNAIL_QUALITY = 100
 
+THUMBNAIL_NAMER = 'easy_thumbnails.namers.hashed'
+
+THUMBNAIL_PREFIX = 'thumb_'
+
 
 # ==============================================================================
 # Django settings app
@@ -202,22 +206,22 @@ THUMBNAIL_QUALITY = 100
 
 # Production settings
 if os.environ.get('ENV') == 'production':
-    from .production import *
+    from .production import *  # NOQA
 
 # Develop settings
 elif os.environ.get('ENV') == 'develop':
-    from .develop import *
+    from .develop import *  # NOQA
 
 # Staging settings
 elif os.environ.get('ENV') == 'staging':
-    from .staging import *
+    from .staging import *  # NOQA
 
 # Default choice
 else:
-    from .develop import *
+    from .develop import *  # NOQA
 
 # Local settings
 try:
-    from .local import *
+    from .local import *  # NOQA
 except ImportError:
     pass
