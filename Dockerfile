@@ -22,7 +22,7 @@ RUN cd /tmp \
 {% endif %}
 
 RUN mkdir -p /webapp
-COPY requirements /webapp/
+COPY ./requirements /webapp/requirements
 WORKDIR /webapp
 
 RUN pip install --upgrade pip
