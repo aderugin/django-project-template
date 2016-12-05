@@ -1,7 +1,7 @@
 FROM python:3.5
 ENV PYTHONUNBUFFERED 1
 
-RUN apt-get update
+RUN apt-get update \
     && apt-get -y install uuid-dev
 
 {% if XAPIAN %}
