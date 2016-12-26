@@ -5,6 +5,8 @@
 from . import *  # NOQA
 
 
+ALLOWED_HOSTS = ['{{ project_name }}.dev']
+
 SITE_ID = 1
 
 DEBUG = True
@@ -28,6 +30,10 @@ DATABASES = {
 INSTALLED_APPS += (  # NOQA
     'debug_toolbar',
 )
+
+MIDDLEWARE = (
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
+) + MIDDLEWARE  # NOQA
 
 
 def show_toolbar(request):
