@@ -9,3 +9,5 @@ public/
 *.rdb
 *.log
 __pycache__
+.env
+settings/local.py

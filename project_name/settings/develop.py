@@ -1,9 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-    Настройки среды для разработки
-"""
 from . import *  # NOQA
-
 
 ALLOWED_HOSTS = ['{{ project_name }}.dev']
 
@@ -15,18 +10,6 @@ COMPRESS_ENABLED = not DEBUG
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': '{{ project_name }}',
-        'USER': 'root',
-        'PASSWORD': '',
-        'HOST': 'mysql.local',
-        'PORT': '3306',
-        'TEST_CHARSET': 'utf8',
-    }
-}
-
 INSTALLED_APPS += (  # NOQA
     'debug_toolbar',
 )
@@ -35,12 +18,6 @@ MIDDLEWARE = (
     'debug_toolbar.middleware.DebugToolbarMiddleware',
 ) + MIDDLEWARE  # NOQA
 
-
-def show_toolbar(request):
-    if request.is_ajax():
-        return False
-    return True
-
 DEBUG_TOOLBAR_CONFIG = {
-    'SHOW_TOOLBAR_CALLBACK': '{{ project_name }}.settings.develop.show_toolbar',
+    'SHOW_TOOLBAR_CALLBACK': lambda request: not request.is_ajax(),
 }

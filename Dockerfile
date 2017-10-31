@@ -1,9 +1,8 @@
-FROM python:3.5
+FROM python:3.6
 ENV PYTHONUNBUFFERED 1
 
 RUN apt-get update \
     && apt-get -y install uuid-dev
-
 {% if XAPIAN %}
 RUN apt-get install -y python-xapian
 RUN cd /tmp \
@@ -20,7 +19,6 @@ RUN cd /tmp \
     && make \
     && make install
 {% endif %}
-
 RUN mkdir -p /webapp
 COPY ./requirements /webapp/requirements
 WORKDIR /webapp

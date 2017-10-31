@@ -1,9 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-    Настройки для боевого сервера
-"""
-from . import *
-
+from . import *  # NOQA
 
 DEBUG = False
 

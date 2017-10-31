@@ -1,5 +1,1 @@
-# -*- coding: utf-8 -*-
-"""
-    Настройки для тестового сервера
-"""
-from . import *
+from . import *  # NOQA

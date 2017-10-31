@@ -1,44 +1,18 @@
 # -*- coding: utf-8 -*-
-from datetime import datetime
-import os
-
 from fabric.api import task, run, local, env, cd, get, prefix
 from fabric.contrib.files import append
-
-
-BACKUPS_ROOT = 'backups/'
-
-MARKUP_DIRECTORY = ''
-
-LOCAL_SSH_KEY = None
-
-with open(os.path.expanduser('~/.ssh/id_rsa.pub'), 'r') as f:
-    LOCAL_SSH_KEY = f.read()
 
 ENVIRONMENT = {
     'staging': '',
     'production': {
-        # Пользователь на сервере
         'user': 'user',
-        # Хосты на которых расположен проект.
-        'host': ['127.0.0.1'],  # django@127.0.0.1
-        # Ветка
+        'hosts': ['127.0.0.1'],
         'branch': 'master',
-        # Путь до папки с media
-        'media_root': '',
-        # Папка с проектом на сервере
-        'root_dir': '',
-        # Команда активации окружения
-        'venv': 'source <path>/bin/activate',
-        # Пользователь базы данных
-        'db_user': 'root',
-        # Пароль базы данных
-        'db_password': '',
-        # Имя базы данных
-        'db_name': '',
-        # Название процесс supervisor
+        'root': '',
+        'venv': None,
+        'docker': None,
         'supervisor': None,
-        # Файл с зависимостями
+        'run_command': None,
         'requirements': 'requirements/production.txt'
     },
 }
@@ -50,19 +24,9 @@ def active_env(name):
     """
     local_env = ENVIRONMENT.get(name, None)
     if not local_env:
-        raise RuntimeError("Не найдено окружение")
-
-    env.user = local_env['user']
-    env.hosts = local_env['host']
-    env.root = local_env['root_dir']
-    env.media_root = local_env['media_root']
-    env.branch = local_env['branch']
-    env.activate = local_env['venv']
-    env.db_user = local_env['db_user']
-    env.db_password = local_env['db_password']
-    env.db_name = local_env['db_name']
-    env.supervisor = local_env['supervisor']
-    env.requirements = local_env['requirements']
+        raise RuntimeError('Не найдено окружение')
+    for key, value in local_env.iteritems():
+        setattr(env, key, value)
 
 
 @task
@@ -82,7 +46,7 @@ def production():
 
 
 @task
-def deploy(branch=None):
+def deploy(branch=None, build=False):
     branch = branch or env.branch
 
     # Пушим все локальные изменения
@@ -90,69 +54,32 @@ def deploy(branch=None):
 
     # Заливаем изменения на сервер
     with cd(env.root):
-        if branch != env.branch:
-            run('git fetch origin %s' % branch)
+        run('git fetch origin %s' % branch)
+        run('git checkout %s' % branch)
         run('git pull origin %s' % branch)
 
-    # Дамп базы данных перед миграциями
-    backup_database()
+    # TODO: Дамп базы данных перед миграциями
 
     # Выполняем команды django
     with cd(env.root):
-        with prefix(env.activate):
-            run('python manage.py collectstatic --noinput')
-            run('python manage.py migrate')
+        if env.docker is not None:
+            if build:
+                run('%s build' % env.docker)
+                run('%s down' % env.docker)
+            run('%s up -d' % env.docker)
+            run('%s python manage.py collectstatic --noinput' % env.docker)
+            run('%s python manage.py migrate' % env.docker)
+        elif env.venv:
+            with prefix(env.venv):
+                run('python manage.py collectstatic --noinput')
+                run('python manage.py migrate')
+            run('supervisorctl restart %s' % env.supervisor)
 
-    # Перезагружаем процессы
-    run('supervisorctl restart ' + env.supervisor)
-
-
-@task
-def install():
-    """
-    Установка зависимостей
-        Ставит завизимости соответсвующи окружению
-    """
-    with cd(env.root):
-        with prefix(env.activate):
-            run('pip install -r %s' % env.requirements)
-
-
-def backup_database():
-    """
-    Бэкап базы данных
-        return: путь до сделанного бэкапа
-    """
-    path = '~/%s/db' % BACKUPS_ROOT
-    name = '{0}_{1}.sql'.format(env.db_name, datetime.strftime(datetime.now(), '%d.%m.%y_%M:%S'))
-    run('mkdir -p %s' % path)
-    run('mysqldump -u %s -p%s %s > ~/%s%s' % (env.db_user, env.db_password, env.db_name, path, name))
-    return '%s/%s' (path, name)
-
-
-@task
-def push_ssh_key():
-    """
-    Загрузка ssh ключа
-    """
-    with cd('~/.ssh/'):
-        append('authorized_keys', LOCAL_SSH_KEY)
-
-
-@task
-def dump_database():
-    """
-    Создание дампа базы данных и его загрузка
-    """
-    get(backup_database(), 'db/')
-
-
-@task
-def dump_media():
-    """
-    Создание дампа media и его загрузка
-    """
-    pass
+        if env.run_command:
+            if not isinstance(env.run_command, list):
+                env.run_command = [env.run_command]
+            for command in env.run_command:
+                run(command)
 
 
 # ==============================================================================
@@ -198,6 +125,16 @@ def runserver():
 
 
 @task
+def celeryw(project='{{ project_name }}'):
+    local('docker-compose exec webapp celery -A %s worker -l info -B' % project)
+
+
+@task
+def celeryb(project='{{ project_name }}'):
+    local('docker-compose exec webapp celery -A %s beat' % project)
+
+
+@task
 def shell():
     local('docker-compose exec webapp python manage.py shell')
 
@@ -213,5 +150,5 @@ def sqlshell():
 
 
 @task
-def run_tests(app=''):
+def runtests(app=''):
     local('docker-compose exec webapp python manage.py test %s --keepdb' % app)

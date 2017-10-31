@@ -1,9 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-    Project settings
-"""
 import os
-
 
 # ==============================================================================
 # Django
@@ -113,8 +108,6 @@ SESSION_COOKIE_AGE = 60 * 60 * 24 * 7 * 4
 
 SESSION_COOKIE_DOMAIN = None
 
-SESSION_SERIALIZER = 'django.contrib.sessions.serializers.PickleSerializer'
-
 
 # Installed apps
 
@@ -132,7 +125,7 @@ COMPRESS_ENABLED = not DEBUG
 
 COMPRESS_OUTPUT_DIR = 'comporess'
 
-
+{% if XAPIAN %}
 # ==============================================================================
 # Haystack
 # ==============================================================================
@@ -145,7 +138,7 @@ HAYSTACK_CONNECTIONS = {
         'PATH': os.path.join(PROJECT_DIR, 'xapian_index'),
     },
 }
-
+{% endif %}
 
 # ==============================================================================
 # Logging
@@ -198,6 +191,21 @@ THUMBNAIL_PREFIX = 'thumb_'
 
 # DJANGO_SETTINGS_MODEL = '{{ project_name }}.base.models.Settings'
 
+
+# ==============================================================================
+# Databases
+# ==============================================================================
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': '{{ project_name }}',
+        'USER': os.getenv('POSTGRES_USER', 'postgres'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'postgres'),
+        'HOST': os.getenv('POSTGRES_HOST', 'postgres'),
+        'PORT': 5432,
+    }
+}
 
 # ==============================================================================
 # Settings imports
