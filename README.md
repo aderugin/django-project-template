@@ -1,1 +1,1 @@
-```django-admin.py startproject --template=https://github.com/aderugin/django-project-template/zipball/master <project_name>```
+```django-admin.py startproject --extension=py,yml,conf --name=Dockerfile --template=https://github.com/aderugin/django-project-template/zipball/master <project_name> <path>```
