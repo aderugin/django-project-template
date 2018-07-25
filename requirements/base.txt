@@ -1,11 +1,10 @@
 # Base apps
-mysqlclient
+psycopg2-binary
 Django
-django-grappelli
 django-compressor
 Pillow
 
 # Additional apps
-easy-thumbnails
+sorl-thumbnail
 python-slugify
-django-autoslug
+django-autoslug-iplweb

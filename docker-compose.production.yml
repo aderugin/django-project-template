@@ -1,0 +1,14 @@
+version: "3"
+
+services:
+    django:
+        build:
+            args:
+                - ENV=production
+        environment:
+            - ENV=production
+        command: gunicorn -c gunicorn_config.py {{ project_name }}.wsgi
+        restart: always
+
+    postgres:
+        restart: always

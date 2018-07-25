@@ -1,6 +1,6 @@
 from . import *  # NOQA
 
-ALLOWED_HOSTS = ['{{ project_name }}.dev']
+ALLOWED_HOSTS = ['*']
 
 SITE_ID = 1
 
@@ -17,7 +17,3 @@ INSTALLED_APPS += (  # NOQA
 MIDDLEWARE = (
     'debug_toolbar.middleware.DebugToolbarMiddleware',
 ) + MIDDLEWARE  # NOQA
-
-DEBUG_TOOLBAR_CONFIG = {
-    'SHOW_TOOLBAR_CALLBACK': lambda request: not request.is_ajax(),
-}

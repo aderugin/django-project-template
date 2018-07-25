@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-from fabric.api import task, run, local, env, cd, get, prefix
-from fabric.contrib.files import append
+from fabric.api import task, run, local, env, cd, prefix
 
 ENVIRONMENT = {
     'staging': '',
@@ -109,46 +108,41 @@ def status():
 
 @task
 def migrate(app='', fake=False):
-    local('docker-compose exec webapp python manage.py migrate %s %s' % (
+    local('docker-compose exec django python manage.py migrate %s %s' % (
         app, '--fake-initial' if fake else ''
     ))
 
 
 @task
 def makemigrations(app=''):
-    local('docker-compose exec webapp python manage.py makemigrations %s' % app)
+    local('docker-compose exec django python manage.py makemigrations %s' % app)
 
 
 @task
 def runserver():
-    local('docker-compose exec webapp python manage.py runserver 0.0.0.0:8000')
+    local('docker-compose exec django python manage.py runserver 0.0.0.0:8000')
 
 
 @task
-def celeryw(project='{{ project_name }}'):
-    local('docker-compose exec webapp celery -A %s worker -l info -B' % project)
+def celeryw():
+    local('docker-compose exec django celery -A {{ project_name }} worker -l info -B')
 
 
 @task
-def celeryb(project='{{ project_name }}'):
-    local('docker-compose exec webapp celery -A %s beat' % project)
+def celeryb():
+    local('docker-compose exec django celery -A {{ project_name }} beat')
 
 
 @task
 def shell():
-    local('docker-compose exec webapp python manage.py shell')
+    local('docker-compose exec django python manage.py shell')
 
 
 @task
 def manage(command):
-    local('docker-compose exec webapp python manage.py %s' % command)
-
-
-@task
-def sqlshell():
-    local('docker-compose exec webapp python manage.py shell_plus --print-sql')
+    local('docker-compose exec django python manage.py %s' % command)
 
 
 @task
 def runtests(app=''):
-    local('docker-compose exec webapp python manage.py test %s --keepdb' % app)
+    local('docker-compose exec django python manage.py test %s --keepdb' % app)

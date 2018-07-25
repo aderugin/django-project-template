@@ -69,7 +69,7 @@ WSGI_APPLICATION = '{{ project_name }}.wsgi.application'
 
 # Internationalization
 
-LANGUAGE_CODE = 'ru-RU'
+LANGUAGE_CODE = 'ru'
 
 TIME_ZONE = 'Asia/Yekaterinburg'
 
@@ -124,20 +124,6 @@ COMPRESS_ENABLED = not DEBUG
 
 COMPRESS_OUTPUT_DIR = 'comporess'
 
-{% if XAPIAN %}
-# ==============================================================================
-# Haystack
-# ==============================================================================
-
-HAYSTACK_XAPIAN_LANGUAGE = 'russian'
-
-HAYSTACK_CONNECTIONS = {
-    'default': {
-        'ENGINE': 'xapian_backend.XapianEngine',
-        'PATH': os.path.join(PROJECT_DIR, 'xapian_index'),
-    },
-}
-{% endif %}
 
 # ==============================================================================
 # Logging
@@ -179,9 +165,9 @@ LOGGING = {
 
 THUMBNAIL_QUALITY = 100
 
-THUMBNAIL_NAMER = 'easy_thumbnails.namers.hashed'
+THUMBNAIL_PRESERVE_FORMAT = True
 
-THUMBNAIL_PREFIX = 'thumb_'
+THUMBNAIL_UPSCALE = False
 
 
 # ==============================================================================

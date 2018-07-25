@@ -23,6 +23,6 @@ RUN mkdir -p /webapp
 COPY ./requirements /webapp/requirements
 WORKDIR /webapp
 
-RUN pip install --upgrade pip
-RUN pip install -r requirements/develop.txt \
-    && pip install ipdb
+RUN pip install --upgrade pip && \
+    pip install -r requirements/develop.txt && \
+    pip install ipdb
