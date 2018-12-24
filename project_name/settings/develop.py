@@ -17,3 +17,7 @@ INSTALLED_APPS += (  # NOQA
 MIDDLEWARE = (
     'debug_toolbar.middleware.DebugToolbarMiddleware',
 ) + MIDDLEWARE  # NOQA
+
+DEBUG_TOOLBAR_CONFIG = {
+    'SHOW_TOOLBAR_CALLBACK': lambda request: True,
+}

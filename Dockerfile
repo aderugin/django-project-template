@@ -19,10 +19,12 @@ RUN cd /tmp \
     && make \
     && make install
 {% endif %}
+ARG ENV=develop
+
 RUN mkdir -p /webapp
 COPY ./requirements /webapp/requirements
 WORKDIR /webapp
 
 RUN pip install --upgrade pip && \
-    pip install -r requirements/develop.txt && \
+    pip install -r requirements/${ENV}.txt && \
     pip install ipdb
